@@ -1,0 +1,16 @@
+#!/bin/zsh
+set -euo pipefail
+
+# Copy this file to ~/scripts/wake-desktop.sh, replace the placeholder MAC
+# address, then run: chmod +x ~/scripts/wake-desktop.sh
+#
+# Keep the real MAC address out of git if you consider it private.
+
+DESKTOP_MAC="AA:BB:CC:DD:EE:FF"
+
+if ! command -v wakeonlan >/dev/null 2>&1; then
+  echo "wakeonlan is not installed. Run: brew install wakeonlan" >&2
+  exit 1
+fi
+
+wakeonlan "$DESKTOP_MAC"
