@@ -1,8 +1,8 @@
 # Codex Switcher (`cxs`)
 
-CLI-only Codex account launcher for WSL/Ubuntu. `cxs` isolates multiple Codex accounts by running the real `codex` CLI with a per-account `CODEX_HOME`.
+CLI-only Codex account switcher for WSL/Ubuntu. `cxs` stores multiple Codex accounts under per-account homes, then syncs the selected account into the default Codex home before launching plain `codex`.
 
-This is **not** a Desktop switcher. After `cxs run`, `cxs sync`, or a running `cxs switch` session exits, `cxs` syncs the selected account auth into `~/.codex` so a later plain `codex` launch uses the same account.
+This is **not** a Desktop switcher. `cxs run` and `cxs sync` sync the selected account auth into `~/.codex` so plain `codex`, Codex App remote projects, and user-level Codex provider config all agree on the active account. `cxs run --isolated` and a running `cxs switch` session still use per-account `CODEX_HOME` isolation.
 
 ## Core model
 
@@ -22,10 +22,12 @@ This is **not** a Desktop switcher. After `cxs run`, `cxs sync`, or a running `c
     usage.json
 ```
 
-Codex is launched as:
+By default, `cxs run <account>` first syncs that account to `~/.codex`, then launches plain `codex` without `CODEX_HOME`. This means your global `~/.codex/config.toml` settings, including custom model providers, remain active.
+
+Isolated mode is still available:
 
 ```bash
-CODEX_HOME=~/.cxs/accounts/<account> codex ...
+cxs run --isolated <account>
 ```
 
 ## Security rules
@@ -109,17 +111,22 @@ cxs run
 cxs run personal
 cxs run work -- exec "review this diff"
 cxs run -- exec "use default account"
+cxs run --isolated work
 ```
 
-Runs the real `codex` process with `CODEX_HOME` set to the selected account home.
+By default, syncs the selected account to `~/.codex`, sets it as the `cxs` default account, then runs the real plain `codex` process. `CODEX_HOME` is removed from the launched process environment so plain Codex uses `~/.codex`.
 
-Before launching Codex, `cxs` merges registered account session directories into `~/.cxs/shared/sessions` and replaces each account's `sessions` directory with a symlink to that shared directory. This lets `codex resume` and `/resume` show previous sessions from other `cxs` accounts. Authentication and config remain per-account.
+This keeps account switching compatible with user-level Codex config such as custom providers in `~/.codex/config.toml`.
 
-When the Codex process exits, `cxs` syncs the selected account auth to the default Codex home. For example, after `cxs run work` exits, running plain `codex` should use `work` instead of whichever account was previously active in `~/.codex`.
+Before launching Codex, `cxs` merges registered account session directories into `~/.cxs/shared/sessions` and replaces each account's `sessions` directory with a symlink to that shared directory. This lets `codex resume` and `/resume` show previous sessions from other `cxs` accounts. Authentication remains per-account in `~/.cxs/accounts/<account>/auth.json`; the selected account is copied to `~/.codex/auth.json` for active use.
 
-If your shell has `CODEX_HOME` set, plain `codex` will use that directory instead of `~/.codex`. `cxs` warns about this after syncing; run `unset CODEX_HOME` in that shell to let plain `codex` use the synced account.
+If your shell has `CODEX_HOME` set, plain `codex` launched outside `cxs run` will use that directory instead of `~/.codex`. Run `unset CODEX_HOME` in that shell to let plain `codex` use the synced account.
 
-`cxs` also removes the default app-server control socket after syncing. Without that, plain `codex` can attach to a persistent remote app-server that still has a previous account cached.
+`cxs` removes `CODEX_HOME` only for the launched `codex` child process. It does not modify your shell environment.
+
+Before `cxs run` launches plain Codex, it removes the default app-server control socket. Without that, plain `codex` can attach to a persistent remote app-server that still has a previous account cached.
+
+`cxs run --isolated <account>` keeps the previous behavior: it runs `codex` with `CODEX_HOME=~/.cxs/accounts/<account>`, then best-effort syncs that account back to `~/.codex` after Codex exits. Use isolated mode when you intentionally want account-local Codex config instead of the global `~/.codex/config.toml`.
 
 If you intentionally keep a default Codex remote-control/app-server session alive, running `cxs run` or a running `cxs switch` may disconnect future plain `codex` launches from that server so the synced local account can take effect.
 

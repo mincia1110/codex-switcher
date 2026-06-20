@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { existsSync } from "node:fs";
-import { buildCodexEnv } from "./env.js";
+import { buildCodexEnv, buildPlainCodexEnv } from "./env.js";
 import { ensureSharedHistory, ensureSharedSessions } from "./shared-sessions.js";
 
 const MACOS_CODEX_APP_BIN = "/Applications/Codex.app/Contents/Resources/codex";
@@ -29,6 +29,14 @@ export async function runCodex(accountHome: string, args: string[]): Promise<num
   await ensureSharedHistory(accountHome);
   return await new Promise((resolve, reject) => {
     const child = spawn(codexBinary(), args, { stdio: "inherit", env: buildCodexEnv(process.env, accountHome) });
+    child.on("error", reject);
+    child.on("exit", (code) => resolve(code ?? 0));
+  });
+}
+
+export async function runPlainCodex(args: string[]): Promise<number> {
+  return await new Promise((resolve, reject) => {
+    const child = spawn(codexBinary(), args, { stdio: "inherit", env: buildPlainCodexEnv(process.env) });
     child.on("error", reject);
     child.on("exit", (code) => resolve(code ?? 0));
   });
