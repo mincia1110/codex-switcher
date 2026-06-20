@@ -3,7 +3,7 @@ import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { existsSync } from "node:fs";
 import { buildCodexEnv, buildPlainCodexEnv } from "./env.js";
-import { ensureSharedHistory, ensureSharedSessions } from "./shared-sessions.js";
+import { ensureSharedHistory, ensureSharedSessionIndex, ensureSharedSessions } from "./shared-sessions.js";
 
 const MACOS_CODEX_APP_BIN = "/Applications/Codex.app/Contents/Resources/codex";
 
@@ -27,6 +27,7 @@ export async function commandExists(command: string): Promise<boolean> {
 export async function runCodex(accountHome: string, args: string[]): Promise<number> {
   await ensureSharedSessions(accountHome);
   await ensureSharedHistory(accountHome);
+  await ensureSharedSessionIndex(accountHome);
   return await new Promise((resolve, reject) => {
     const child = spawn(codexBinary(), args, { stdio: "inherit", env: buildCodexEnv(process.env, accountHome) });
     child.on("error", reject);

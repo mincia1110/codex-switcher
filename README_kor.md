@@ -99,7 +99,7 @@ cxs run -- exec "use default account"
 
 선택된 계정 home을 `CODEX_HOME`으로 지정하여 실제 `codex` 프로세스를 실행합니다.
 
-Codex를 실행하기 전에 `cxs`는 등록된 계정들의 기존 `sessions` 디렉터리를 `~/.cxs/shared/sessions`로 병합하고, 각 계정의 `sessions` 디렉터리를 해당 공용 디렉터리 symlink로 교체합니다. 그래서 `codex resume`과 `/resume`에서 다른 `cxs` 계정으로 만들었던 세션도 보입니다. 인증과 config는 계속 계정별로 유지됩니다.
+Codex를 실행하기 전에 `cxs`는 등록된 계정들의 기존 `sessions` 디렉터리를 `~/.cxs/shared/sessions`로 병합하고, 각 계정의 `sessions` 디렉터리를 해당 공용 디렉터리 symlink로 교체합니다. `history.jsonl`과 `session_index.jsonl`도 `~/.cxs/shared` 아래로 병합/공유합니다. 그래서 `codex resume`과 `/resume`에서 다른 `cxs` 계정으로 만들었던 세션도 보입니다. 인증과 config는 계속 계정별로 유지됩니다.
 
 Codex 프로세스가 종료되면 선택한 계정 인증을 기본 Codex home으로 동기화합니다. 예를 들어 `cxs run work` 종료 후 plain `codex`를 실행하면, 기존 `~/.codex`에 남아 있던 계정 대신 `work` 계정을 사용해야 합니다.
 

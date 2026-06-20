@@ -2,7 +2,7 @@ import { chmod, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { defaultCodexAppServerControlSocketPath, defaultCodexAuthJsonPath, defaultCodexConfigTomlPath, defaultCodexHome } from "../account/paths.js";
 import { atomicWriteFile } from "../utils/fs.js";
-import { ensureSharedHistory, ensureSharedSessions } from "./shared-sessions.js";
+import { ensureSharedHistory, ensureSharedSessionIndex, ensureSharedSessions } from "./shared-sessions.js";
 
 const FILE_CREDENTIAL_STORE = 'cli_auth_credentials_store = "file"';
 
@@ -33,6 +33,7 @@ export async function syncDefaultCodexAuth(accountHome: string, options: SyncDef
   const authJson = await readFile(path.join(accountHome, "auth.json"), "utf8");
   await ensureSharedSessions(defaultCodexHome());
   await ensureSharedHistory(defaultCodexHome());
+  await ensureSharedSessionIndex(defaultCodexHome());
   await atomicWriteFile(defaultCodexAuthJsonPath(), authJson, 0o600);
   await chmod(defaultCodexAuthJsonPath(), 0o600);
 
