@@ -1,6 +1,6 @@
 # Codex Auth With cxs
 
-`cxs`는 여러 Codex 계정을 계정별 `CODEX_HOME`으로 격리하고, 필요할 때 선택 계정을 plain `codex`와 Codex App SSH remote project가 쓰는 기본 home으로 sync한다.
+`cxs`는 여러 Codex 계정을 계정별 home에 저장하고, 선택 계정을 plain `codex`와 Codex App SSH remote project가 쓰는 기본 home으로 sync한다.
 
 ## 핵심 구조
 
@@ -26,10 +26,16 @@
     usage.json
 ```
 
-실행 모델:
+기본 실행 모델:
 
 ```bash
-CODEX_HOME=~/.cxs/accounts/<account> codex ...
+cxs run <account>  # cxs sync <account> 후 plain codex 실행
+```
+
+격리 실행이 필요하면 다음을 쓴다.
+
+```bash
+cxs run --isolated <account>
 ```
 
 보안 원칙:
@@ -66,7 +72,12 @@ cxs use personal
 ```bash
 cxs run personal
 cxs run business -- exec "review this diff"
+cxs run --isolated business
 ```
+
+기본 `cxs run <account>`는 먼저 `~/.codex/auth.json`과 `~/.codex/config.toml`을 sync한 뒤, `CODEX_HOME` 없이 plain `codex`를 실행한다. 따라서 `~/.codex/config.toml`의 custom provider 설정을 그대로 사용한다.
+
+`cxs run --isolated <account>`는 기존 방식처럼 `CODEX_HOME=~/.cxs/accounts/<account>`로 실행한다. 이 경우 provider 설정도 계정별 `config.toml`에 있어야 한다.
 
 대화형 선택:
 
