@@ -187,6 +187,23 @@ Security notes:
 - The cache stores only `UsageSnapshot` fields: account, email, plan, usageSource, fiveHour, weekly, fetchedAt.
 - The `assertNoSecrets` guard rejects any write that contains token-shaped strings.
 
+### Reset Credits
+
+```bash
+cxs reset-credits
+cxs reset-credits work
+cxs reset-credits --current
+cxs reset-credits --timezone Asia/Seoul
+```
+
+Shows a safe summary of Codex reset credit availability and credit expiries. By default it uses the configured default `cxs` account; pass an account name to check that account home, or `--current` to read the active plain Codex auth at `~/.codex/auth.json`.
+
+Security notes:
+- Calls only `https://chatgpt.com/backend-api/wham/rate-limit-reset-credits`.
+- Uses the local access token and account id only as request headers.
+- Prints only available count, total earned count, and expiry times.
+- Never prints tokens, account ids, emails, profile URLs, credit ids, cookies, or raw endpoint responses.
+
 ### Doctor
 
 ```bash

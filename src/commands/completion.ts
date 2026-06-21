@@ -1,6 +1,6 @@
 export type CompletionShell = "bash" | "zsh";
 
-const COMMANDS = "login list use run sync switch usage doctor export completion";
+const COMMANDS = "login list use run sync switch usage reset-credits doctor export completion";
 
 export function completionScript(shell: CompletionShell): string {
   if (shell === "bash") {
@@ -25,7 +25,10 @@ _cxs_completions() {
       COMPREPLY=( $(compgen -W "--dry-run" -- "$cur") )
       ;;
     usage)
-      COMPREPLY=( $(compgen -W "--scan --json" -- "$cur") )
+      COMPREPLY=( $(compgen -W "--scan --refresh --json" -- "$cur") )
+      ;;
+    reset-credits)
+      COMPREPLY=( $(compgen -W "--current --timezone" -- "$cur") )
       ;;
     export)
       COMPREPLY=( $(compgen -W "--redacted --output" -- "$cur") )
@@ -52,6 +55,7 @@ _cxs() {
     'sync:Sync account auth to default Codex home'
     'switch:Interactively select account and run codex'
     'usage:Show local/cache usage for all accounts'
+    'reset-credits:Show safe Codex reset credit summary'
     'doctor:Diagnose cxs/codex/account setup'
     'export:Export a redacted diagnostics bundle'
     'completion:Print shell completion script'
@@ -74,7 +78,10 @@ _cxs() {
           _values 'sync options' '--dry-run'
           ;;
         usage)
-          _values 'usage options' '--scan' '--json'
+          _values 'usage options' '--scan' '--refresh' '--json'
+          ;;
+        reset-credits)
+          _values 'reset credit options' '--current' '--timezone[timezone for expiry dates]:zone:'
           ;;
         export)
           _values 'export options' '--redacted' '--output[write JSON bundle to file]:path:_files'
