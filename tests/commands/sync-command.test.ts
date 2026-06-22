@@ -1,9 +1,9 @@
-import { access, chmod, mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { access, chmod, lstat, mkdir, mkdtemp, readFile, readlink, stat, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { writeConfig } from "../../src/account/config.js";
-import { accountAuthJsonPath, accountHome, defaultCodexAppServerControlSocketPath, defaultCodexAuthJsonPath, defaultCodexConfigTomlPath } from "../../src/account/paths.js";
+import { accountAuthJsonPath, accountHome, defaultCodexAppServerControlSocketPath, defaultCodexAuthJsonPath, defaultCodexConfigTomlPath, defaultCodexHome, sharedSessionIndexPath } from "../../src/account/paths.js";
 import { syncCommand } from "../../src/commands/sync.js";
 
 const originalHome = process.env.HOME;
@@ -90,6 +90,35 @@ describe("syncCommand", () => {
     expect(output).toContain("will set to personal");
     expect(output).not.toContain("SECRET");
     expect(await readFile(path.join(home, ".cxs", "config.json"), "utf8")).toContain('"defaultAccount": "other"');
+  });
+
+  it("repairs session indexes across cxs accounts and the default Codex home before relaunch use", async () => {
+    await seedAccount("personal", '{"tokens":{"access_token":"SECRET"}}\n');
+    await mkdir(accountHome("other"), { recursive: true });
+    await writeFile(accountAuthJsonPath("other"), "{}\n", { mode: 0o600 });
+    await writeConfig({
+      version: 1,
+      defaultAccount: "other",
+      accounts: {
+        personal: { name: "personal", home: accountHome("personal"), createdAt: "2026-06-04T00:00:00.000Z" },
+        other: { name: "other", home: accountHome("other"), createdAt: "2026-06-04T00:00:00.000Z" },
+      },
+    });
+    await mkdir(defaultCodexHome(), { recursive: true });
+    await writeFile(path.join(accountHome("personal"), "session_index.jsonl"), "{\"id\":\"personal\",\"thread_name\":\"Personal\",\"updated_at\":\"2026-06-22T02:00:00Z\"}\n");
+    await symlink(sharedSessionIndexPath(), path.join(accountHome("other"), "session_index.jsonl"), "file");
+    await writeFile(path.join(defaultCodexHome(), "session_index.jsonl"), "{\"id\":\"default\",\"thread_name\":\"Default\",\"updated_at\":\"2026-06-22T03:00:00Z\"}\n");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await syncCommand("personal");
+
+    const sharedIndex = await readFile(sharedSessionIndexPath(), "utf8");
+    expect(sharedIndex).toContain("\"id\":\"personal\"");
+    expect(sharedIndex).toContain("\"id\":\"default\"");
+    expect((await lstat(path.join(accountHome("personal"), "session_index.jsonl"))).isSymbolicLink()).toBe(true);
+    expect((await lstat(path.join(accountHome("other"), "session_index.jsonl"))).isSymbolicLink()).toBe(true);
+    expect((await lstat(path.join(defaultCodexHome(), "session_index.jsonl"))).isSymbolicLink()).toBe(true);
+    expect(path.resolve(path.dirname(path.join(defaultCodexHome(), "session_index.jsonl")), await readlink(path.join(defaultCodexHome(), "session_index.jsonl")))).toBe(sharedSessionIndexPath());
   });
 });
 

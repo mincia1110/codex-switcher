@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defaultCodexHome } from "../../src/account/paths.js";
 import { buildCodexEnv, buildPlainCodexEnv } from "../../src/codex/env.js";
 
 describe("buildCodexEnv", () => {
@@ -6,6 +7,13 @@ describe("buildCodexEnv", () => {
     const env = buildCodexEnv({ PATH: "/bin", CODEX_HOME: "/old" }, "/new/home");
     expect(env.PATH).toBe("/bin");
     expect(env.CODEX_HOME).toBe("/new/home");
+    expect(env.CODEX_SQLITE_HOME).toBe(defaultCodexHome());
+  });
+
+  it("preserves an explicit CODEX_SQLITE_HOME override", () => {
+    const env = buildCodexEnv({ CODEX_SQLITE_HOME: "/sqlite/home" }, "/new/home");
+    expect(env.CODEX_HOME).toBe("/new/home");
+    expect(env.CODEX_SQLITE_HOME).toBe("/sqlite/home");
   });
 });
 

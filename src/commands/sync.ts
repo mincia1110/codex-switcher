@@ -4,6 +4,7 @@ import { defaultCodexAppServerControlSocketPath, defaultCodexAuthJsonPath, defau
 import { readConfig, setDefaultAccount, touchLastUsed } from "../account/config.js";
 import { resolveAccount, validateAccountName } from "../account/accounts.js";
 import { syncDefaultCodexAuth } from "../codex/default-home.js";
+import { ensureAllSharedSessions } from "../codex/shared-sessions.js";
 
 export type SyncCommandOptions = {
   dryRun?: boolean;
@@ -13,6 +14,7 @@ export async function syncCommand(name: string | undefined, options: SyncCommand
   if (name) validateAccountName(name);
 
   const config = await readConfig();
+  await ensureAllSharedSessions(Object.values(config.accounts));
   const account = resolveAccount(config, name);
   const sourceAuthPath = path.join(account.home, "auth.json");
 
@@ -25,6 +27,7 @@ export async function syncCommand(name: string | undefined, options: SyncCommand
 
   await chmod(sourceAuthPath, 0o600);
   await syncDefaultCodexAuth(account.home, { appServerReset: "warn" });
+  await ensureAllSharedSessions(Object.values(config.accounts));
   await setDefaultAccount(account.name);
   await touchLastUsed(account.name);
   console.log(`Synced ${account.name} to ${defaultCodexAuthJsonPath()} for plain codex.`);
