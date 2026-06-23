@@ -10,6 +10,7 @@ import { usageCommand } from "./commands/usage.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { exportCommand } from "./commands/export.js";
 import { completionCommand } from "./commands/completion.js";
+import { repairSessionsCommand } from "./commands/repair-sessions.js";
 import { resetCreditsCommand } from "./commands/reset-credits.js";
 
 const program = new Command();
@@ -21,6 +22,7 @@ program.command("run").description("sync an account, then run plain codex").allo
 program.command("sync").description("sync account auth to the default Codex home without running Codex").argument("[name]").option("--dry-run", "show planned sync without modifying files").action(wrap(syncCommand));
 program.command("switch").description("interactively select account and run codex").option("--no-run", "set default only").option("--scan", "rescan local usage logs before showing").addOption(new Option("--sort <mode>", "sort order").choices(["default", "quota", "recent", "name"]).default("default")).action(wrap(switchCommand));
 program.command("usage").description("show usage for all accounts via backend/status/local/cache provider chain").option("--scan", "rescan local usage logs only").option("--refresh", "allow slower backend/status refresh").option("--json", "print JSON").action(wrap(usageCommand));
+program.command("repair-sessions").description("repair shared Codex sessions/history/index links across cxs homes").action(wrap(repairSessionsCommand));
 program.command("reset-credits").description("show safe Codex reset credit summary for an account").argument("[name]").option("--current", "read ~/.codex/auth.json instead of a cxs account").option("--timezone <zone>", "IANA timezone for expiry dates").action(wrap(resetCreditsCommand));
 program.command("doctor").description("diagnose cxs/codex/account setup").action(wrap(doctorCommand));
 program.command("export").description("export a redacted diagnostics bundle").option("--redacted", "redact secrets and raw emails").option("-o, --output <path>", "write JSON bundle to a file").action(wrap(exportCommand));

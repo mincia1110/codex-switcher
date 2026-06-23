@@ -146,6 +146,14 @@ parser는 schema 변경에 관대하게 동작하며, `primary` 및 `secondary` 
 
 usage 조회 실패는 `unknown`으로 표시되며, 계정 전환이나 Codex 실행을 막지 않습니다.
 
+### Repair sessions
+
+```bash
+cxs repair-sessions
+```
+
+`~/.codex`와 모든 `cxs` 계정 home의 `sessions/`, `history.jsonl`, `session_index.jsonl` 공유 링크를 복구합니다. Codex CLI/Desktop이 session metadata 파일을 다시 쓴 뒤 resume/session 목록을 확인하기 전에 안전하게 실행할 수 있습니다.
+
 ### Reset Credits
 
 ```bash

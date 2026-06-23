@@ -1,6 +1,6 @@
 export type CompletionShell = "bash" | "zsh";
 
-const COMMANDS = "login list use run sync switch usage reset-credits doctor export completion";
+const COMMANDS = "login list use run sync switch usage repair-sessions reset-credits doctor export completion";
 
 export function completionScript(shell: CompletionShell): string {
   if (shell === "bash") {
@@ -55,6 +55,7 @@ _cxs() {
     'sync:Sync account auth to default Codex home'
     'switch:Interactively select account and run codex'
     'usage:Show local/cache usage for all accounts'
+    'repair-sessions:Repair shared Codex session links'
     'reset-credits:Show safe Codex reset credit summary'
     'doctor:Diagnose cxs/codex/account setup'
     'export:Export a redacted diagnostics bundle'

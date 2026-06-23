@@ -187,6 +187,14 @@ Security notes:
 - The cache stores only `UsageSnapshot` fields: account, email, plan, usageSource, fiveHour, weekly, fetchedAt.
 - The `assertNoSecrets` guard rejects any write that contains token-shaped strings.
 
+### Repair sessions
+
+```bash
+cxs repair-sessions
+```
+
+Repairs shared `sessions/`, `history.jsonl`, and `session_index.jsonl` links across `~/.codex` and all configured `cxs` account homes. This is safe to run after Codex CLI/Desktop rewrites session metadata files and before checking resume/session lists.
+
 ### Reset Credits
 
 ```bash

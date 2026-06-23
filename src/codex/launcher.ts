@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { existsSync } from "node:fs";
+import { defaultCodexHome } from "../account/paths.js";
 import { buildCodexEnv, buildPlainCodexEnv } from "./env.js";
 import { ensureSharedHistory, ensureSharedSessionIndex, ensureSharedSessions } from "./shared-sessions.js";
 
@@ -25,20 +26,32 @@ export async function commandExists(command: string): Promise<boolean> {
 }
 
 export async function runCodex(accountHome: string, args: string[]): Promise<number> {
-  await ensureSharedSessions(accountHome);
-  await ensureSharedHistory(accountHome);
-  await ensureSharedSessionIndex(accountHome);
-  return await new Promise((resolve, reject) => {
-    const child = spawn(codexBinary(), args, { stdio: "inherit", env: buildCodexEnv(process.env, accountHome) });
-    child.on("error", reject);
-    child.on("exit", (code) => resolve(code ?? 0));
-  });
+  await ensureSharedHome(accountHome);
+  try {
+    return await new Promise((resolve, reject) => {
+      const child = spawn(codexBinary(), args, { stdio: "inherit", env: buildCodexEnv(process.env, accountHome) });
+      child.on("error", reject);
+      child.on("exit", (code) => resolve(code ?? 0));
+    });
+  } finally {
+    await ensureSharedHome(accountHome);
+  }
 }
 
 export async function runPlainCodex(args: string[]): Promise<number> {
-  return await new Promise((resolve, reject) => {
-    const child = spawn(codexBinary(), args, { stdio: "inherit", env: buildPlainCodexEnv(process.env) });
-    child.on("error", reject);
-    child.on("exit", (code) => resolve(code ?? 0));
-  });
+  try {
+    return await new Promise((resolve, reject) => {
+      const child = spawn(codexBinary(), args, { stdio: "inherit", env: buildPlainCodexEnv(process.env) });
+      child.on("error", reject);
+      child.on("exit", (code) => resolve(code ?? 0));
+    });
+  } finally {
+    await ensureSharedHome(defaultCodexHome());
+  }
+}
+
+async function ensureSharedHome(accountHome: string): Promise<void> {
+  await ensureSharedSessions(accountHome);
+  await ensureSharedHistory(accountHome);
+  await ensureSharedSessionIndex(accountHome);
 }

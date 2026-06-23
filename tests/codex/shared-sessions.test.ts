@@ -1,4 +1,4 @@
-import { lstat, mkdir, mkdtemp, readFile, readlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readlink, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -118,14 +118,67 @@ describe("ensureSharedSessionIndex", () => {
     const secondAccountHome = path.join(home, ".cxs", "accounts", "personal");
     await mkdir(firstAccountHome, { recursive: true });
     await mkdir(secondAccountHome, { recursive: true });
-    await writeFile(path.join(firstAccountHome, "session_index.jsonl"), "{\"id\":\"one\",\"thread_name\":\"One\"}\n{\"id\":\"shared\",\"thread_name\":\"Shared\"}\n");
-    await writeFile(path.join(secondAccountHome, "session_index.jsonl"), "{\"id\":\"shared\",\"thread_name\":\"Shared duplicate\"}\n{\"id\":\"two\",\"thread_name\":\"Two\"}\n");
+    await writeFile(path.join(firstAccountHome, "session_index.jsonl"), "{\"id\":\"one\",\"thread_name\":\"One\",\"updated_at\":\"2026-06-22T01:00:00Z\"}\n{\"id\":\"shared\",\"thread_name\":\"Shared\",\"updated_at\":\"2026-06-22T01:00:00Z\"}\n");
+    await writeFile(path.join(secondAccountHome, "session_index.jsonl"), "{\"id\":\"shared\",\"thread_name\":\"Shared latest\",\"updated_at\":\"2026-06-22T02:00:00Z\"}\n{\"id\":\"two\",\"thread_name\":\"Two\",\"updated_at\":\"2026-06-22T02:00:00Z\"}\n");
 
     await ensureSharedSessionIndex(firstAccountHome);
     await ensureSharedSessionIndex(secondAccountHome);
 
     await expect(readFile(sharedSessionIndexPath(), "utf8")).resolves.toBe(
-      "{\"id\":\"one\",\"thread_name\":\"One\"}\n{\"id\":\"shared\",\"thread_name\":\"Shared\"}\n{\"id\":\"two\",\"thread_name\":\"Two\"}\n",
+      "{\"id\":\"one\",\"thread_name\":\"One\",\"updated_at\":\"2026-06-22T01:00:00Z\"}\n{\"id\":\"shared\",\"thread_name\":\"Shared\",\"updated_at\":\"2026-06-22T01:00:00Z\"}\n{\"id\":\"shared\",\"thread_name\":\"Shared latest\",\"updated_at\":\"2026-06-22T02:00:00Z\"}\n{\"id\":\"two\",\"thread_name\":\"Two\",\"updated_at\":\"2026-06-22T02:00:00Z\"}\n",
     );
+  });
+
+  it("does not append an older same-id session index entry after a newer shared entry", async () => {
+    const firstAccountHome = path.join(home, ".cxs", "accounts", "work");
+    const secondAccountHome = path.join(home, ".cxs", "accounts", "personal");
+    await mkdir(firstAccountHome, { recursive: true });
+    await mkdir(secondAccountHome, { recursive: true });
+    await writeFile(path.join(firstAccountHome, "session_index.jsonl"), "{\"id\":\"shared\",\"thread_name\":\"New\",\"updated_at\":\"2026-06-22T02:00:00Z\"}\n");
+    await writeFile(path.join(secondAccountHome, "session_index.jsonl"), "{\"id\":\"shared\",\"thread_name\":\"Old\",\"updated_at\":\"2026-06-22T01:00:00Z\"}\n");
+
+    await ensureSharedSessionIndex(firstAccountHome);
+    await ensureSharedSessionIndex(secondAccountHome);
+
+    await expect(readFile(sharedSessionIndexPath(), "utf8")).resolves.toBe("{\"id\":\"shared\",\"thread_name\":\"New\",\"updated_at\":\"2026-06-22T02:00:00Z\"}\n");
+  });
+
+  it("creates the shared session index when an account already links to it", async () => {
+    const accountHome = path.join(home, ".cxs", "accounts", "work");
+    await mkdir(accountHome, { recursive: true });
+    await symlink(sharedSessionIndexPath(), path.join(accountHome, "session_index.jsonl"), "file");
+
+    await ensureSharedSessionIndex(accountHome);
+
+    await expect(readFile(sharedSessionIndexPath(), "utf8")).resolves.toBe("");
+  });
+});
+
+describe("already-linked shared history", () => {
+  it("creates the shared history file when an account already links to it", async () => {
+    const accountHome = path.join(home, ".cxs", "accounts", "work");
+    await mkdir(accountHome, { recursive: true });
+    await symlink(sharedHistoryPath(), path.join(accountHome, "history.jsonl"), "file");
+
+    await ensureSharedHistory(accountHome);
+
+    await expect(readFile(sharedHistoryPath(), "utf8")).resolves.toBe("");
+  });
+});
+
+describe("wrong sessions symlinks", () => {
+  it("copies sessions from a non-shared sessions symlink before relinking", async () => {
+    const accountHome = path.join(home, ".cxs", "accounts", "work");
+    const oldTarget = path.join(home, "old-sessions");
+    const oldSession = path.join(oldTarget, "2026", "06", "22", "rollout.jsonl");
+    await mkdir(path.dirname(oldSession), { recursive: true });
+    await writeFile(oldSession, "old\n");
+    await mkdir(accountHome, { recursive: true });
+    await symlink(oldTarget, path.join(accountHome, "sessions"), "dir");
+
+    await ensureSharedSessions(accountHome);
+
+    await expect(readFile(path.join(sharedSessionsPath(), "2026", "06", "22", "rollout.jsonl"), "utf8")).resolves.toBe("old\n");
+    expect(path.resolve(accountHome, await readlink(path.join(accountHome, "sessions")))).toBe(sharedSessionsPath());
   });
 });
