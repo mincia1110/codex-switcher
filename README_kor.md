@@ -154,6 +154,23 @@ cxs repair-sessions
 
 `~/.codex`와 모든 `cxs` 계정 home의 `sessions/`, `history.jsonl`, `session_index.jsonl` 공유 링크를 복구합니다. Codex CLI/Desktop이 session metadata 파일을 다시 쓴 뒤 resume/session 목록을 확인하기 전에 안전하게 실행할 수 있습니다.
 
+### Reset Credits
+
+```bash
+cxs reset-credits
+cxs reset-credits work
+cxs reset-credits --current
+cxs reset-credits --timezone Asia/Seoul
+```
+
+Codex reset credit의 사용 가능 개수와 만료 시간을 안전한 요약으로 출력합니다. 기본값은 `cxs` 기본 계정이며, 계정명을 넘기면 해당 계정 home을 확인합니다. `--current`를 넘기면 plain Codex가 쓰는 `~/.codex/auth.json`을 확인합니다.
+
+보안 규칙:
+- `https://chatgpt.com/backend-api/wham/rate-limit-reset-credits` 엔드포인트만 호출합니다.
+- local access token과 account id는 요청 header로만 사용합니다.
+- 출력은 사용 가능 개수, 총 획득 개수, 만료 시간으로 제한합니다.
+- token, account id, email, profile URL, credit id, cookie, raw endpoint response는 출력하지 않습니다.
+
 ### Doctor
 
 ```bash
